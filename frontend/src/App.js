@@ -9,7 +9,7 @@ const App = () => {
   const [newPerson, setNewPerson] = useState({ name: "", number: "" })
   const [filter, setFilter] = useState('')
   const [personsToShow, setPersonsToShow] = useState([]);
-  const [errorMessage, setErrorMessage] = useState(null)
+  const [message, setMessage] = useState(null)
 
   useEffect(() => {
     phonebookServices
@@ -31,18 +31,23 @@ const App = () => {
       id: newPerson.name
     };
     if (currentName.length === 0) {
-
-      setErrorMessage(
-        `Added ${personObject.name}`
-      )
-      setTimeout(() => {
-        setErrorMessage(null)
-      }, 3000)
       phonebookServices
         .create(personObject)
         .then(returnedPerson => {
           setPersons(persons.concat(returnedPerson))
           setPersonsToShow(persons.concat(returnedPerson))
+          setMessage(
+            `Added ${personObject.name}`
+          )
+          setTimeout(() => {
+            setMessage(null)
+          }, 3000)
+        })
+        .catch(error => {
+          setMessage(error.response.data.error)
+          setTimeout(() => {
+            setMessage(null)
+          }, 3000)
         })
       
     } else {
@@ -50,16 +55,16 @@ const App = () => {
         phonebookServices
           .update(currentName[0].id, personObject)
           .then((returnedPerson) => {
-            const updatedPersons = persons.map(person => person.id !== returnedPerson.id ? person : returnedPerson)
+            const updatedPersons = persons.map(person => 
+              person.id !== returnedPerson.id ? person : returnedPerson
+            )
             setPersons(updatedPersons)
             setPersonsToShow(updatedPersons)
           })
           .catch(error => {
-            setErrorMessage(
-              `Information of ${currentName[0].name} was already removed from server`
-            )
+            setMessage(error.response.data.error)
             setTimeout(()=>{
-              setErrorMessage(null)
+              setMessage(null)
             }, 3000)
           })
       }
@@ -113,7 +118,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
-      <Notification message={errorMessage} />
+      <Notification message={message} />
       <Filter value={filter} filterByName={filterByName} />
       <h2>add a new</h2>
       <PersonForm
@@ -122,10 +127,7 @@ const App = () => {
         handleChange={handleChange}
       />
       <h2>Numbers</h2>
-
-
       <Persons personsToShow={personsToShow} deletePerson={deletePerson} />
-
     </div>
   )
 }
